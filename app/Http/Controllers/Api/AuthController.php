@@ -135,7 +135,7 @@ class AuthController extends Controller
         $codeData = ResetCodePassword::query()->create($data);
 
         Mail::to($request['email'])->send(new SendCodeResetPassword($codeData['code']));
-        return response()->json(['message' => trans('code.sent')]);
+        return response()->json(['message' => 'code sent successfully' ]);
     }
 
 
@@ -183,7 +183,7 @@ class AuthController extends Controller
 
         return response()->json([
             'code' => $passwordRest['code'],
-            'message' => trans('password.code_is_valid')
+            'message' => 'password code is valid '
         ], 200);
     }
 
@@ -199,7 +199,7 @@ class AuthController extends Controller
 
         if ($passwordRest['created_at'] > now()->addHour()) {
             $passwordRest->delete();
-            return  response()->json(['message' => trans('password.code_is_expire')], 422);
+            return  response()->json(['message' => 'password code is expire' ], 422);
         }
 
 
