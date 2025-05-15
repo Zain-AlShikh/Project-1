@@ -23,28 +23,24 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         try {
-            // خطوات التسجيل
-            $data = $request->only(['first_name', 'last_name', 'phone', 'email', 'location']);
+            $data = $request->only(['first_name', 'last_name', 'phone' , 'password', 'email', 'location']);
             $data['password'] = Hash::make($request->password);
 
             if ($request->hasFile('profile_image_url')) {
                 $data['profile_image_url'] = $request->file('profile_image_url')->store('profile_images', 'public');
             }
 
-            // إنشاء المستخدم
             $user = User::create($data);
             $token = $user->createToken('Your_App_Name')->plainTextToken;
 
             // إرسال رسالة التحقق
             $this->sendVerificationMessage($request->phone);
 
-            // إرجاع استجابة النجاح مع المستخدم والرمز
             return Response::Success([
                 'user' => $user->makeHidden(['created_at', 'updated_at']),
                 'token' => $token
             ], 'User registered and verification message sent successfully');
         } catch (Throwable $th) {
-            // إرجاع استجابة الخطأ في حالة حدوث استثناء
             return Response::Error([], $th->getMessage());
         }
     }
@@ -82,13 +78,13 @@ class AuthController extends Controller
 
     public function resendOtpPhone(Request $request)
     {
-        $user = Auth::user(); // المستخدم الحالي
+        $user = Auth::user();
 
         if (!$user) {
             return Response::Error([], 'User not authenticated.');
         }
 
-        // إرسال رمز جديد إلى رقم المستخدم الحالي
+        
         return $this->sendVerificationMessage($user->phone);
     }
 

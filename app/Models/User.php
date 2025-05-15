@@ -3,10 +3,14 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Notifications\MessageSent;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+// use Illuminate\Mail\Events\MessageSent;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -20,11 +24,13 @@ class User extends Authenticatable
     protected $fillable = [
         'first_name',
         'last_name',
-        'email',
         'phone',
-        'profile_image_url',
-        'location',
+        'email',
         'password',
+        'location',
+        'profile_image',
+        'is_verified',
+        'role'
     ];
 
     /**
@@ -48,5 +54,24 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+
+
+    public function favoriteBooks()
+    {
+        return $this->belongsToMany(Book::class, 'book_user_favorites');
+    }
+
+    public function libraryBooks()
+    {
+        return $this->belongsToMany(Book::class, 'book_user_library');
+    }
+
+    public function ratedBooks()
+    {
+        return $this->belongsToMany(Book::class, 'book_user_ratings')
+            ->withPivot('rating')
+            ->withTimestamps();
     }
 }

@@ -36,7 +36,7 @@ class RegisterRequest extends FormRequest
             'email.required' => 'The email address is required.',
             'email.email' => 'The email address must be a valid email format.',
             'email.unique' => 'The email address is already registered.',
-            'email.max' => 'The email address must not exceed 255 characters.', 
+            'email.max' => 'The email address must not exceed 255 characters.',
             'password.required' => 'The password is required.',
             'password.min' => 'The password must be at least 8 characters.',
             'password.confirmed' => 'Password confirmation does not match.',

@@ -16,9 +16,8 @@ class MessageController extends Controller
      */
     public function verifyCode(Request $request)
     {
-        // التحقق من صحة البيانات المدخلة
         $validator = Validator::make($request->all(), [
-            'code' => 'required|string|min:4|max:4',  // التحقق من الرمز فقط
+            'code' => 'required|string|min:4|max:4',
         ]);
 
         if ($validator->fails()) {
@@ -58,7 +57,6 @@ class MessageController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Verification successful.',
-            // 'user' => $user->makeHidden(['created_at', 'updated_at', 'password']),
         ], 200);
     }
 
