@@ -84,7 +84,7 @@ class AuthController extends Controller
             return Response::Error([], 'User not authenticated.');
         }
 
-        
+
         return $this->sendVerificationMessage($user->phone);
     }
 
@@ -94,28 +94,33 @@ class AuthController extends Controller
 
 
     public function login(LoginRequest $request)
-    {
-        try {
-            $credentials = $request->only(['identifier', 'password']);
+{
+    try {
+        $credentials = $request->only(['identifier', 'password']);
 
-            $user = User::where('email', $credentials['identifier'])
-                ->orWhere('phone', $credentials['identifier'])
-                ->first();
+        $user = User::where('email', $credentials['identifier'])
+            ->orWhere('phone', $credentials['identifier'])
+            ->first();
 
-            if (!$user || !Hash::check($credentials['password'], $user->password)) {
-                return Response::Validation(['identifier' => ['Invalid credentials. Please check your email/phone and password.']]);
-            }
-
-            $token = $user->createToken('Your_App_Name')->plainTextToken;
-
-            return Response::Success([
-                'user' => $user->makeHidden(['created_at', 'updated_at']),
-                'token' => $token
-            ], 'User logged in successfully');
-        } catch (Throwable $th) {
-            return Response::Error([], $th->getMessage());
+        if (!$user || !Hash::check($credentials['password'], $user->password)) {
+            return Response::Validation(['identifier' => ['Invalid credentials. Please check your email/phone and password.']]);
         }
+
+        if (!$user->is_verified) {
+            return Response::Error([], 'Your account is not verified. Please verify your phone number first.');
+        }
+
+        $token = $user->createToken('Your_App_Name')->plainTextToken;
+
+        return Response::Success([
+            'user' => $user->makeHidden(['created_at', 'updated_at']),
+            'token' => $token
+        ], 'User logged in successfully');
+    } catch (Throwable $th) {
+        return Response::Error([], $th->getMessage());
     }
+}
+
 
 
 
