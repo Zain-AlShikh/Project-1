@@ -60,7 +60,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::get('/books/{id}', [BookController::class, 'show']);
-    Route::get('/fetch-book/{isbn}/{categoryId}', [BookController::class, 'fetchAndStore']);
+    Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']);
+
 
     /*
     |--------------------------------------------------------------------------
@@ -79,6 +80,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::prefix('authors')->group(function () {
+        Route::post('/', [AuthorController::class, 'store']);
         Route::get('/all-athors', [AuthorController::class, 'index']); // جميع المؤلفين
         Route::get('/{id}/books', [AuthorController::class, 'booksByAuthor']); // كتب مؤلف معين
         Route::get('/search', [AuthorController::class, 'searchAuthorByName']); // تابع للبحث عن المؤلف معين عن طريق الأسم

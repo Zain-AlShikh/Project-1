@@ -56,66 +56,132 @@ class BookController extends Controller
     /**
      * Fetch a book from OpenLibrary by ISBN and store it under a specified category.
      */
-    public function fetchAndStore($isbn, $categoryId)
+    public function fetchAndStoreByIdentifier($identifier, $categoryId)
     {
         $category = Category::find($categoryId);
         if (!$category) {
             return Response::Error(null, 'Category not found', 404);
         }
 
-        $url = "https://openlibrary.org/isbn/{$isbn}.json";
-        $response = Http::get($url);
-
-        if ($response->failed()) {
-            return Response::Error(null, 'Book not found or OpenLibrary unreachable', 404);
-        }
-
-        $data = $response->json();
-
-        // Fetch author name
+        $book = null;
         $author = null;
-        if (!empty($data['authors'][0]['key'])) {
-            $authorUrl = "https://openlibrary.org" . $data['authors'][0]['key'] . ".json";
-            $authorResponse = Http::get($authorUrl);
-            if ($authorResponse->ok()) {
-                $authorName = $authorResponse->json()['name'] ?? null;
-                if ($authorName) {
-                    $author = Author::firstOrCreate(['name' => $authorName]);
+        $pdfUrl = null;
+
+        $tryEndpoints = [
+            "isbn" => "https://openlibrary.org/isbn/{$identifier}.json",
+            "olid" => "https://openlibrary.org/books/{$identifier}.json",
+            "work" => "https://openlibrary.org/works/{$identifier}.json",
+        ];
+
+        foreach ($tryEndpoints as $type => $url) {
+            $response = Http::get($url);
+            if (!$response->ok()) {
+                continue;
+            }
+
+            $data = $response->json();
+            $title = $data['title'] ?? 'Untitled';
+
+            // الوصف
+            $descriptionRaw = is_array($data['description'] ?? null)
+                ? ($data['description']['value'] ?? null)
+                : ($data['description'] ?? null);
+            $description = $descriptionRaw ?: 'There is no description available for this book.';
+
+            // المؤلف
+            $authorKey = null;
+            if ($type === 'work' && !empty($data['authors'][0]['author']['key'])) {
+                $authorKey = $data['authors'][0]['author']['key'];
+            } elseif (!empty($data['authors'][0]['key'])) {
+                $authorKey = $data['authors'][0]['key'];
+            }
+
+            if ($authorKey) {
+                $authorResponse = Http::get("https://openlibrary.org{$authorKey}.json");
+                if ($authorResponse->ok()) {
+                    $authorName = $authorResponse->json()['name'] ?? null;
+                    if ($authorName) {
+                        $author = Author::firstOrCreate(['name' => $authorName]);
+                    }
                 }
             }
+
+            if (!$author) {
+                $author = Author::inRandomOrder()->first();
+
+                if (!$author) {
+                    $author = Author::create([
+                        'name' => 'Unknown Author',
+                    ]);
+                }
+            }
+
+            $coverUrl = isset($data['covers'][0])
+                ? "https://covers.openlibrary.org/b/id/{$data['covers'][0]}-L.jpg"
+                : null;
+
+            if (isset($data['ocaid'])) {
+                $pdfUrl = "https://archive.org/download/{$data['ocaid']}/{$data['ocaid']}.pdf";
+            }
+
+            $pagesCount = null;
+            if (isset($data['number_of_pages'])) {
+                $pagesCount = $data['number_of_pages'];
+            } elseif (isset($data['pagination'])) {
+                preg_match('/\d+/', $data['pagination'], $matches);
+                $pagesCount = $matches[0] ?? null;
+            }
+            if (is_null($pagesCount)) {
+                $pagesCount = rand(100, 350);
+            }
+
+            $subjects = $data['subjects'] ?? ['No subjects available'];
+            $subjectsJson = json_encode($subjects);
+
+            // معالجة publish_year
+            $publishDateRaw = $data['publish_date'] ?? $data['created']['value'] ?? null;
+            if ($publishDateRaw) {
+                $timestamp = strtotime($publishDateRaw);
+                if ($timestamp !== false) {
+                    $publishYear = (int) date('Y', $timestamp);
+                } else {
+                    $publishYear = 1999;
+                }
+            } else {
+                $publishYear = 1999;
+            }
+
+            // اللغة
+            $language = $data['languages'][0]['key'] ?? null;
+            if (!$language) {
+                $language = '\language\eng';
+            }
+
+            $book = Book::create([
+                'title'        => $title,
+                'author_id'    => $author->id,
+                'category_id'  => $categoryId,
+                'isbn'         => $data['isbn_10'][0] ?? $data['isbn_13'][0] ?? ($type === 'isbn' ? $identifier : null),
+                'publish_year' => $publishYear,
+                'pages_count'  => $pagesCount,
+                'publisher'    => $data['publishers'][0] ?? null,
+                'cover_url'    => $coverUrl,
+                'description'  => $description,
+                'subject'      => $subjectsJson,
+                'pdf_url'      => $pdfUrl,
+                'language'     => $language,
+            ]);
+
+            break;
         }
 
-        $coverUrl = isset($data['covers'][0])
-            ? "https://covers.openlibrary.org/b/id/{$data['covers'][0]}-L.jpg"
-            : null;
+        if (!$book) {
+            return Response::Error(null, 'Book not found using provided identifier.', 404);
+        }
 
-        $pdfUrl = isset($data['ocaid'])
-            ? "https://archive.org/download/{$data['ocaid']}/{$data['ocaid']}.pdf"
-            : null;
-
-        $description = is_array($data['description'] ?? null)
-            ? ($data['description']['value'] ?? null)
-            : ($data['description'] ?? null);
-
-        $book = Book::create([
-            'title'        => $data['title'] ?? 'Untitled',
-            'author_id'    => $author?->id,
-            'category_id'  => $categoryId,
-            'isbn'         => $isbn,
-            'publish_year' => isset($data['publish_date']) ? intval(substr($data['publish_date'], 0, 4)) : null,
-            'pages_count'  => $data['number_of_pages'] ?? null,
-            'publisher'    => $data['publishers'][0] ?? null,
-            'cover_url'    => $coverUrl,
-            'description'  => $description,
-            'subject'      => $data['subjects'] ?? [],
-            'pdf_url'      => $pdfUrl,
-            'language'     => isset($data['languages'][0]['key']) ? basename($data['languages'][0]['key']) : null,
-        ]);
-
-        //  بيانات الإيميل
         $bookData = [
             'title'        => $book->title,
-            'author'       => $author?->name ?? 'Unknown Author',
+            'author'       => $author->name ?? 'Unknown Author',
             'isbn'         => $book->isbn,
             'publish_year' => $book->publish_year,
             'pages_count'  => $book->pages_count,
@@ -123,17 +189,15 @@ class BookController extends Controller
             'language'     => $book->language,
         ];
 
-        // إرسال الإيميل لجميع المستخدمين
         $emails = User::pluck('email');
         foreach ($emails as $email) {
-            dispatch(new SendNewBookEmail($email, $bookData)); 
+            dispatch(new SendNewBookEmail($email, $bookData));
         }
 
         return Response::Success([
             'id'           => $book->id,
             'title'        => $book->title,
-            'author'       => $author?->name ?? 'Unknown Author',
-            'author_id'    => $book->author_id,
+            'author'       => $author->name ?? 'Unknown Author',
             'category_id'  => $book->category_id,
             'isbn'         => $book->isbn,
             'publish_year' => $book->publish_year,
@@ -144,6 +208,6 @@ class BookController extends Controller
             'subject'      => $book->subject,
             'pdf_url'      => $book->pdf_url,
             'language'     => $book->language,
-        ], 'Book fetched and saved successfully', 201);
+        ], 'Book fetched and saved successfully.', 201);
     }
 }

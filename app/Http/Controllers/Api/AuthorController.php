@@ -13,19 +13,39 @@ class AuthorController extends Controller
     /**
      * Get all authors
      */
-   public function index(Request $request)
-{
-    $showAll = $request->query('show_all');
+    public function index(Request $request)
+    {
+        $showAll = $request->query('show_all');
 
-    if ($showAll === 'true') {
-        $authors = Author::select('id', 'name')->get();
-    } else {
-        $authors = Author::select('id', 'name')->limit(10)->get();
+        if ($showAll === 'true') {
+            $authors = Author::select('id', 'name')->get();
+        } else {
+            $authors = Author::select('id', 'name')->limit(10)->get();
+        }
+
+        return Response::Success($authors, 'All authors retrieved successfully');
     }
 
-    return Response::Success($authors, 'All authors retrieved successfully');
-}
 
+
+    /**
+     * Store a new author
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|unique:authors,name|max:255',
+        ]);
+
+        $author = Author::create([
+            'name' => $request->input('name'),
+        ]);
+
+        return Response::Success([
+            'id' => $author->id,
+            'name' => $author->name,
+        ], 'Author created successfully');
+    }
 
     /**
      * Get all books

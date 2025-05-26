@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('book_user_ratings', function (Blueprint $table) {
             $table->id();
             $table->tinyInteger('rating')->unsigned()->comment('from 1 to 5');
-             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('book_id')->constrained()->onDelete('cascade');
             $table->timestamps();
 
-             $table->unique(['user_id', 'book_id']); // لمنع التكرار
+            $table->unique(['user_id', 'book_id']); // لمنع التكرار
         });
     }
 
