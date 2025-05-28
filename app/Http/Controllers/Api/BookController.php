@@ -164,7 +164,7 @@ class BookController extends Controller
                 'isbn'         => $data['isbn_10'][0] ?? $data['isbn_13'][0] ?? ($type === 'isbn' ? $identifier : null),
                 'publish_year' => $publishYear,
                 'pages_count'  => $pagesCount,
-                'publisher'    => $data['publishers'][0] ?? null,
+                'publisher'    => $data['publishers'][0] ?? 'Unknown Publisher',
                 'cover_url'    => $coverUrl,
                 'description'  => $description,
                 'subject'      => $subjectsJson,
