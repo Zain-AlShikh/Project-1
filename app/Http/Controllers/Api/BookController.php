@@ -24,6 +24,32 @@ class BookController extends Controller
         return Response::Success($books, 'Books fetched successfully');
     }
 
+
+
+
+    /**
+     * Get latest added books (title and cover only), supports limit or all.
+     */
+    public function latest(Request $request)
+    {
+        $showAll = $request->query('show_all');
+
+        $query = Book::select('id', 'title', 'cover_url')
+            ->orderBy('created_at', 'desc');
+
+        if ($showAll === 'true') {
+            $books = $query->get();
+        } else {
+            $books = $query->limit(10)->get();
+        }
+
+        return Response::Success($books, 'Latest books fetched successfully');
+    }
+
+
+
+
+
     /**
      * Show detailed info about a specific book.
      */

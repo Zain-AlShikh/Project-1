@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\BookController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AuthorController;
+use App\Http\Controllers\Api\ProfileController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -54,14 +55,26 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/resend-otp', [AuthController::class, 'resendOtpPhone']);
 
+
+ /*
+    |--------------------------------------------------------------------------
+    | Profile Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/profile', [ProfileController::class, 'show']);      // عرض البروفايل
+    Route::post('/profile/update', [ProfileController::class, 'update']);  // تعديل البروفايل
+
+
+
+
     /*
     |--------------------------------------------------------------------------
     | Book Routes
     |--------------------------------------------------------------------------
     */
-    Route::get('/books/{id}', [BookController::class, 'show']);
-    Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']);
-
+    Route::get('/books/latest', [BookController::class, 'latest']); // تابع لعرض الكتب المضافة حديثاً , آخر 20 تمت اضافتهن
+    Route::get('/books/{id}', [BookController::class, 'show']); // عرض التفاصيل الخاصة بكل كتاب
+    Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']); // تابع لأدخال الكتب  عن طريق رقمه حسب القسم الخاص به
 
     /*
     |--------------------------------------------------------------------------

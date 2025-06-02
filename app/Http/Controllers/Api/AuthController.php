@@ -23,11 +23,13 @@ class AuthController extends Controller
     public function register(RegisterRequest $request)
     {
         try {
-            $data = $request->only(['first_name', 'last_name', 'phone' , 'password', 'email', 'location']);
+            $data = $request->only(['first_name', 'last_name', 'phone', 'password', 'email', 'location']);
             $data['password'] = Hash::make($request->password);
 
-            if ($request->hasFile('profile_image_url')) {
-                $data['profile_image_url'] = $request->file('profile_image_url')->store('profile_images', 'public');
+
+
+            if ($request->hasFile('profile_image')) {
+                $data['profile_image'] = $request->file('profile_image')->store('profile_images', 'public');
             }
 
             $user = User::create($data);
@@ -50,18 +52,28 @@ class AuthController extends Controller
      */
     public function sendVerificationMessage($phone)
     {
-        // إنشاء رمز تحقق عشوائي
+
         $code = rand(1000, 9999);
 
         try {
-            // إرسال رمز التحقق عبر Telegram
-            TelegramGateway::sendVerificationMessage($phone, [
-                'code' => $code,
-                'ttl' => 600,  // وقت صلاحية الرمز (10 دقائق)
-            ]);
+            // خريطة الأرقام مع التوكينات المخصصة
+            $tokens = [
+                '0983801332' => 'AAGvGgAALrSI75ySLNIiS3RWt-LQUVuHYqhfoC2_prZ0Rg',
+                '0934169837' => 'AAEXEgAAT5jKD4E2BDMUaKkW_WWkORYsL1ozFGP8Qq8K0g',
+            ];
 
-            // تخزين رقم الهاتف في الـ Cache باستخدام الرمز كمفتاح
-            Cache::put('verification_code_' . $code, $phone, now()->addMinutes(value: 10));
+            // اختيار التوكن المناسب
+            $token = $tokens[$phone] ?? env('TELEGRAM_API_TOKEN');
+
+            // إرسال رمز التحقق عبر Telegram
+            app(\SomarKesen\TelegramGateway\Services\TelegramGatewayService::class)
+                ->sendVerificationMessage($phone, [
+                    'code' => $code,
+                    'ttl' => 600,
+                ], $token);
+
+            // تخزين الرمز مع الهاتف في الكاش
+            Cache::put('verification_code_' . $code, $phone, now()->addMinutes(10));
 
             return response()->json([
                 'message' => 'Verification code sent successfully.',
@@ -94,32 +106,32 @@ class AuthController extends Controller
 
 
     public function login(LoginRequest $request)
-{
-    try {
-        $credentials = $request->only(['identifier', 'password']);
+    {
+        try {
+            $credentials = $request->only(['identifier', 'password']);
 
-        $user = User::where('email', $credentials['identifier'])
-            ->orWhere('phone', $credentials['identifier'])
-            ->first();
+            $user = User::where('email', $credentials['identifier'])
+                ->orWhere('phone', $credentials['identifier'])
+                ->first();
 
-        if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return Response::Validation(['identifier' => ['Invalid credentials. Please check your email/phone and password.']]);
+            if (!$user || !Hash::check($credentials['password'], $user->password)) {
+                return Response::Validation(['identifier' => ['Invalid credentials. Please check your email/phone and password.']]);
+            }
+
+            if (!$user->is_verified) {
+                return Response::Error([], 'Your account is not verified. Please verify your phone number first.');
+            }
+
+            $token = $user->createToken('Your_App_Name')->plainTextToken;
+
+            return Response::Success([
+                'user' => $user->makeHidden(['created_at', 'updated_at']),
+                'token' => $token
+            ], 'User logged in successfully');
+        } catch (Throwable $th) {
+            return Response::Error([], $th->getMessage());
         }
-
-        if (!$user->is_verified) {
-            return Response::Error([], 'Your account is not verified. Please verify your phone number first.');
-        }
-
-        $token = $user->createToken('Your_App_Name')->plainTextToken;
-
-        return Response::Success([
-            'user' => $user->makeHidden(['created_at', 'updated_at']),
-            'token' => $token
-        ], 'User logged in successfully');
-    } catch (Throwable $th) {
-        return Response::Error([], $th->getMessage());
     }
-}
 
 
 
@@ -136,35 +148,35 @@ class AuthController extends Controller
         $codeData = ResetCodePassword::query()->create($data);
 
         Mail::to($request['email'])->send(new SendCodeResetPassword($codeData['code']));
-        return response()->json(['message' => 'code sent successfully' ]);
+        return response()->json(['message' => 'code sent successfully']);
     }
 
 
 
     public function resendOtpPassword(Request $request)
-{
-    // البحث عن آخر رمز مسجل لهذا المستخدم
-    $passwordReset = ResetCodePassword::query()->latest()->first();
+    {
+        // البحث عن آخر رمز مسجل لهذا المستخدم
+        $passwordReset = ResetCodePassword::query()->latest()->first();
 
-    if (!$passwordReset) {
-        return response()->json(['message' => 'No OTP request found for this user'], 404);
+        if (!$passwordReset) {
+            return response()->json(['message' => 'No OTP request found for this user'], 404);
+        }
+
+        // حذف الرمز القديم
+        ResetCodePassword::query()->where('email', $passwordReset->email)->delete();
+
+        // إنشاء رمز جديد
+        $newCode = mt_rand(1000, 9999);
+        $newPasswordReset = ResetCodePassword::query()->create([
+            'email' => $passwordReset->email,
+            'code' => $newCode
+        ]);
+
+        // إرسال البريد الإلكتروني مجددًا
+        Mail::to($passwordReset->email)->send(new SendCodeResetPassword($newCode));
+
+        return response()->json(['message' => 'OTP has been resent successfully']);
     }
-
-    // حذف الرمز القديم
-    ResetCodePassword::query()->where('email', $passwordReset->email)->delete();
-
-    // إنشاء رمز جديد
-    $newCode = mt_rand(1000, 9999);
-    $newPasswordReset = ResetCodePassword::query()->create([
-        'email' => $passwordReset->email,
-        'code' => $newCode
-    ]);
-
-    // إرسال البريد الإلكتروني مجددًا
-    Mail::to($passwordReset->email)->send(new SendCodeResetPassword($newCode));
-
-    return response()->json(['message' => 'OTP has been resent successfully']);
-}
 
 
 
@@ -189,10 +201,11 @@ class AuthController extends Controller
     }
 
 
-    public function userResetPassword(Request $request){
+    public function userResetPassword(Request $request)
+    {
         $input = $request->validate([
-            'code'=>'required|string|exists:reset_code_passwords' ,
-            'password' =>['required' , 'confirmed' ,]
+            'code' => 'required|string|exists:reset_code_passwords',
+            'password' => ['required', 'confirmed',]
         ]);
 
         $passwordRest = ResetCodePassword::query()->firstWhere('code', $request['code']);
@@ -200,20 +213,20 @@ class AuthController extends Controller
 
         if ($passwordRest['created_at'] > now()->addHour()) {
             $passwordRest->delete();
-            return  response()->json(['message' => 'password code is expire' ], 422);
+            return  response()->json(['message' => 'password code is expire'], 422);
         }
 
 
-        $user = User::query()->firstWhere('email'  , $passwordRest['email']) ;
+        $user = User::query()->firstWhere('email', $passwordRest['email']);
 
-        $input['password'] = bcrypt($input['password']) ;
+        $input['password'] = bcrypt($input['password']);
         $user->update([
-            'password' => $input['password'] ,
-        ]) ;
+            'password' => $input['password'],
+        ]);
 
         $passwordRest->delete();
         return response()->json([
-            'message'=> 'password has been successfully reset'
+            'message' => 'password has been successfully reset'
         ]);
     }
 }
