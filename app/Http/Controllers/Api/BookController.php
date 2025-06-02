@@ -40,7 +40,7 @@ class BookController extends Controller
         if ($showAll === 'true') {
             $books = $query->get();
         } else {
-            $books = $query->limit(10)->get();
+            $books = $query->limit(value: 5)->get();
         }
 
         return Response::Success($books, 'Latest books fetched successfully');
