@@ -56,7 +56,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/resend-otp', [AuthController::class, 'resendOtpPhone']);
 
 
- /*
+    /*
     |--------------------------------------------------------------------------
     | Profile Routes
     |--------------------------------------------------------------------------
@@ -65,6 +65,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/profile/update', [ProfileController::class, 'update']);  // تعديل البروفايل
 
 
+    Route::get('/books/search', [BookController::class, 'search']);
 
 
     /*
@@ -75,6 +76,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/books/latest', [BookController::class, 'latest']); // تابع لعرض الكتب المضافة حديثاً , آخر 20 تمت اضافتهن
     Route::get('/books/{id}', [BookController::class, 'show']); // عرض التفاصيل الخاصة بكل كتاب
     Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']); // تابع لأدخال الكتب  عن طريق رقمه حسب القسم الخاص به
+    Route::post('/books/{book}/rate', [BookController::class, 'rate']);// تقييم كتاب معين
+    // البحث عن الكتب
+
 
     /*
     |--------------------------------------------------------------------------
@@ -100,6 +104,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{authorId}/books/search', [AuthorController::class, 'searchBooksByAuthor']); // تابع البحث عن كتاب معين عن طريق اسم الكتاب او الناشر
     });
 
-    // البحث عن الكتب
-    Route::get('/books/search', [BookController::class, 'search']);
 });

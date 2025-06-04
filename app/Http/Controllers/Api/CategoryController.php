@@ -30,18 +30,18 @@ class CategoryController extends Controller
     }
 
     // عرض جميع الأقسام
-   public function index(Request $request)
-{
-    $showAll = $request->query('show_all');
+    public function index(Request $request)
+    {
+        $showAll = $request->query('show_all');
 
-    if ($showAll === 'true') {
-        $categories = Category::select('id', 'name')->get();
-    } else {
-        $categories = Category::select('id', 'name')->limit(10)->get();
+        if ($showAll === 'true') {
+            $categories = Category::select('id', 'name')->get();
+        } else {
+            $categories = Category::select('id', 'name')->limit(10)->get();
+        }
+
+        return Response::Success($categories, 'Categories retrieved successfully');
     }
-
-    return Response::Success($categories, 'Categories retrieved successfully');
-}
 
 
     // عرض جميع الكتب داخل قسم معيّن
@@ -86,7 +86,7 @@ class CategoryController extends Controller
             return Response::Error(null, 'Category not found', 404);
         }
 
-        // البحث في كتب القسم فقط حسب اسم المؤلف أو عنوان الكتاب أو اسم الناشر
+
         $books = Book::where('category_id', $categoryId)
             ->where(function ($q) use ($query) {
                 $q->whereRaw('LOWER(title) LIKE ?', ["%$query%"])

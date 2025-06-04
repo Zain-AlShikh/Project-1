@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Http;
 use App\Http\Responses\Response;
 use App\Jobs\SendNewBookEmail;
 use App\Models\User;
+use  App\Models\BookUserRating;
+use Illuminate\Support\Facades\Auth;
 
 class BookController extends Controller
 {
@@ -38,7 +40,7 @@ class BookController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($showAll === 'true') {
-            $books = $query->get();
+            $books = $query->limit(value: 2)->get();
         } else {
             $books = $query->limit(value: 5)->get();
         }
@@ -55,28 +57,105 @@ class BookController extends Controller
      */
     public function show($id)
     {
-        $book = Book::with(['author', 'category'])->find($id);
+
+        $book = Book::with(['author', 'category', 'ratings'])->find($id);
 
         if (!$book) {
             return Response::Error(null, 'Book not found', 404);
         }
 
+        $user = Auth::user();
+        $userRating = null;
+
+        if ($user) {
+
+            $userRating = $book->ratings()->where('user_id', $user->id)->value('rating');
+        }
+
+
+        $averageRating = round($book->ratings()->avg('rating'), 1);
+        // $ratingsCount = $book->ratings()->count();
+
+
         return Response::Success([
-            'id'           => $book->id,
-            'title'        => $book->title,
-            'author'       => $book->author?->name ?? 'Unknown Author',
-            'category'     => $book->category?->name ?? 'Unknown Category',
-            'isbn'         => $book->isbn,
-            'publish_year' => $book->publish_year,
-            'pages_count'  => $book->pages_count,
-            'publisher'    => $book->publisher,
-            'cover_url'    => $book->cover_url,
-            'description'  => $book->description,
-            'subject'      => $book->subject,
-            'pdf_url'      => $book->pdf_url,
-            'language'     => $book->language,
-            'created_at'   => $book->created_at,
+            'id'             => $book->id,
+            'title'          => $book->title,
+            'author'         => $book->author?->name ?? 'Unknown Author',
+            'category'       => $book->category?->name ?? 'Unknown Category',
+            'isbn'           => $book->isbn,
+            'publish_year'   => $book->publish_year,
+            'pages_count'    => $book->pages_count,
+            'publisher'      => $book->publisher,
+            'cover_url'      => $book->cover_url,
+            'description'    => $book->description,
+            'subject'        => $book->subject,
+            'pdf_url'        => $book->pdf_url,
+            'language'       => $book->language,
+            'average_rating' => $averageRating,
+            'your_rating'    => $userRating,
         ], 'Book details retrieved successfully');
+    }
+
+
+
+
+    /**
+     * Summary of rate Book >>
+     */
+    public function rate(Request $request, $bookId)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+        ]);
+
+        $user = Auth::user();
+        $book = Book::findOrFail($bookId);
+
+        $rating = BookUserRating::updateOrCreate(
+            ['user_id' => $user->id, 'book_id' => $book->id],
+            ['rating' => $request->rating]
+        );
+
+        return Response::Success($rating, 'Book rated successfully');
+    }
+
+
+
+    /**
+     * Summary of search book >>>
+     *
+     */
+
+    public function search(Request $request)
+    {
+        $query = $request->input('query');
+
+        if (!$query) {
+            return Response::Error(null, 'Search query is required', 422);
+        }
+
+        $books = Book::where(function ($q) use ($query) {
+            $q->where('title', 'LIKE', "%{$query}%")
+                ->orWhere('publisher', 'LIKE', "%{$query}%")
+                ->orWhereHas('author', function ($authorQuery) use ($query) {
+                    $authorQuery->where('name', 'LIKE', "%{$query}%");
+                });
+        })
+            ->get();
+
+        if ($books->isEmpty()) {
+            return Response::Error(null, 'No books found matching your search', 404);
+        }
+
+        $results = $books->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'cover_url' => $book->cover_url,
+            ];
+        });
+
+        return Response::Success($results, 'Search results retrieved successfully');
     }
 
     /**

@@ -45,13 +45,15 @@ class Book extends Model
         return $this->belongsToMany(User::class, 'book_user_library');
     }
 
+    // public function ratings()
+    // {
+    //     return $this->belongsToMany(User::class, 'book_user_ratings')
+    //         ->withPivot('rating')
+    //         ->withTimestamps();
+    // }
+
     public function ratings()
     {
-        return $this->belongsToMany(User::class, 'book_user_ratings')
-            ->withPivot('rating')
-            ->withTimestamps();
+        return $this->hasMany(BookUserRating::class);
     }
-
-
-
 }
