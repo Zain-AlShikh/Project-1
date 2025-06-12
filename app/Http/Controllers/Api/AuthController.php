@@ -60,6 +60,8 @@ class AuthController extends Controller
             $tokens = [
                 '0983801332' => 'AAGvGgAALrSI75ySLNIiS3RWt-LQUVuHYqhfoC2_prZ0Rg',
                 '0934169837' => 'AAEXEgAAT5jKD4E2BDMUaKkW_WWkORYsL1ozFGP8Qq8K0g',
+                '0959710488' => 'AAHmGwAA3opMo5Lz3ahUyLooJkn1PX5qHNFBtqqscF7Z2g',
+                '0984972040' => 'AAHnGwAA3YrshqRdP1yQ5TMkLXaJlxwzetni7iFCRNw6Kw',
             ];
 
             // اختيار التوكن المناسب
@@ -228,5 +230,17 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'password has been successfully reset'
         ]);
+    }
+
+    public function logout(Request $request)
+    {
+        try {
+
+            $request->user()->currentAccessToken()->delete();
+
+            return Response::Success([], 'User logged out successfully');
+        } catch (Throwable $th) {
+            return Response::Error([], $th->getMessage());
+        }
     }
 }

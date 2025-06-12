@@ -8,6 +8,8 @@ use App\Http\Controllers\Api\BookController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\AuthorController;
 use App\Http\Controllers\Api\ProfileController;
+use App\Http\Controllers\Api\FavoriteController;
+use App\Http\Controllers\Api\LibraryController;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -65,7 +67,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/profile/update', [ProfileController::class, 'update']);  // تعديل البروفايل
 
 
-    Route::get('/books/search', [BookController::class, 'search']);
 
 
     /*
@@ -76,8 +77,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/books/latest', [BookController::class, 'latest']); // تابع لعرض الكتب المضافة حديثاً , آخر 20 تمت اضافتهن
     Route::get('/books/{id}', [BookController::class, 'show']); // عرض التفاصيل الخاصة بكل كتاب
     Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']); // تابع لأدخال الكتب  عن طريق رقمه حسب القسم الخاص به
-    Route::post('/books/{book}/rate', [BookController::class, 'rate']);// تقييم كتاب معين
-    // البحث عن الكتب
+    Route::post('/books/{book}/rate', [BookController::class, 'rate']); // تقييم كتاب معين
+    Route::post('/books/search', [BookController::class, 'search']);
+
+
 
 
     /*
@@ -104,4 +107,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/{authorId}/books/search', [AuthorController::class, 'searchBooksByAuthor']); // تابع البحث عن كتاب معين عن طريق اسم الكتاب او الناشر
     });
 
+    Route::prefix('favorites')->group(function () {
+        Route::post('/add', [FavoriteController::class, 'addToFavorites']); // إضافة كتاب إلى المفضلة
+        Route::delete('/remove', [FavoriteController::class, 'removeFromFavorites']); // إزالة كتاب من المفضلة
+        Route::get('/all_favorites', [FavoriteController::class, 'getFavorites']); // عرض كل الكتب في المفضلة
+    });
+
+
+
+    Route::prefix('library')->group(function () {
+        Route::post('/add', [LibraryController::class, 'addToLibrary']);          // إضافة كتاب إلى مكتبتي
+        Route::delete('/remove', [LibraryController::class, 'removeFromLibrary']); // إزالة كتاب من مكتبتي
+        Route::get('/all', [LibraryController::class, 'getLibrary']);             // عرض كل الكتب في مكتبتي
+        Route::get('/pdf', [LibraryController::class, 'getPdfLink']); //PDF الكتاب
+    });
 });

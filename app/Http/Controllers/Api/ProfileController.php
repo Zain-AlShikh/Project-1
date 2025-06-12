@@ -47,7 +47,6 @@ class ProfileController extends Controller
                 Storage::disk('public')->delete($user->profile_image);
             }
 
-            // حفظ الصورة الجديدة
             $path = $request->file('profile_image')->store('profile_images', 'public');
             $user->profile_image = $path;
         }

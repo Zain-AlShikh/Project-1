@@ -56,21 +56,27 @@ class User extends Authenticatable
         ];
     }
 
-public function getProfileImageUrlAttribute()
-{
-    return $this->profile_image ? asset('storage/' . $this->profile_image) : null;
-}
-
-
-    public function favoriteBooks()
+    public function getProfileImageUrlAttribute()
     {
-        return $this->belongsToMany(Book::class, 'book_user_favorites');
+        return $this->profile_image ? asset('storage/' . $this->profile_image) : null;
     }
+
+    /**
+     * Get the books this user has favorited.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function favoritedBooks()
+    {
+        return $this->belongsToMany(Book::class, 'book_user_favorites', 'user_id', 'book_id')->withTimestamps();
+    }
+
 
     public function libraryBooks()
     {
-        return $this->belongsToMany(Book::class, 'book_user_library');
+        return $this->belongsToMany(Book::class, 'book_user_library', 'user_id', 'book_id')->withTimestamps();
     }
+
 
     public function ratedBooks()
     {
