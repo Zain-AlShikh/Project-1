@@ -78,14 +78,12 @@ class LibraryController extends Controller
     $user = Auth::user();
     $bookId = $request->book_id;
 
-    // تحقق إذا كان الكتاب موجود في مكتبة المستخدم
     $inLibrary = $user->libraryBooks()->where('book_id', $bookId)->exists();
 
     if (!$inLibrary) {
         return Response::Error(null, 'This book is not in your library', 403);
     }
 
-    // جلب رابط الـ PDF
     $book = Book::select('id', 'title', 'pdf_url')->find($bookId);
 
     if (!$book || !$book->pdf_url) {

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\AuthorController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\LibraryController;
+use App\Http\Middleware\AdminMiddleware;
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -98,14 +99,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Authors Routes
+    |--------------------------------------------------------------------------
+    */
 
     Route::prefix('authors')->group(function () {
-        Route::post('/', [AuthorController::class, 'store']);
-        Route::get('/all-athors', [AuthorController::class, 'index']); // جميع المؤلفين
+        Route::get('/all-athors', [AuthorController::class, 'index']); // عرض جميع المؤلفين
         Route::get('/{id}/books', [AuthorController::class, 'booksByAuthor']); // كتب مؤلف معين
         Route::get('/search', [AuthorController::class, 'searchAuthorByName']); // تابع للبحث عن المؤلف معين عن طريق الأسم
         Route::get('/{authorId}/books/search', [AuthorController::class, 'searchBooksByAuthor']); // تابع البحث عن كتاب معين عن طريق اسم الكتاب او الناشر
     });
+    /*
+    |--------------------------------------------------------------------------
+    | Category Routes
+    |--------------------------------------------------------------------------
+    */
 
     Route::prefix('favorites')->group(function () {
         Route::post('/add', [FavoriteController::class, 'addToFavorites']); // إضافة كتاب إلى المفضلة
@@ -114,6 +124,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     });
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Library Routes
+    |--------------------------------------------------------------------------
+    */
 
     Route::prefix('library')->group(function () {
         Route::post('/add', [LibraryController::class, 'addToLibrary']);          // إضافة كتاب إلى مكتبتي
@@ -121,4 +136,21 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/all', [LibraryController::class, 'getLibrary']);             // عرض كل الكتب في مكتبتي
         Route::get('/pdf', [LibraryController::class, 'getPdfLink']); //PDF الكتاب
     });
+});
+
+
+
+
+//  الروات الخاص بالآدمن
+Route::middleware(['auth:sanctum', AdminMiddleware::class])->prefix('admin')->group(function () {
+ // إضافة قسم جديد
+    Route::post('/categories/add-category', [CategoryController::class, 'store']);
+
+    // إضافة مؤلف جديد
+    Route::post('/authors', [AuthorController::class, 'store']);
+
+    // إدخال الكتب عن طريق الرقم حسب القسم
+    Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']);
+
+
 });
