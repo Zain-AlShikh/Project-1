@@ -1,5 +1,7 @@
 <?php
 
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -11,6 +13,8 @@ use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\LibraryController;
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Controllers\ApiAdmin\AdminController;
+
 /*
 |--------------------------------------------------------------------------
 | Public Routes
@@ -140,10 +144,30 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 
+//   الروات الخاص بالآدمن غير محمي 
 
-//  الروات الخاص بالآدمن
+
+// راوت تسجيل الدخول لا يحتاج إلى مصادقة 
+// auth:sanctum لأنه هو الذي ينشئ التوكن.
+// عند استدعاء /admin/login، لا يوجد توكن بعد. لذا أي 
+// middleware يطلب توكن (مثل auth:sanctum) سيفشل دائمًا في هذه المرحلة.
+// وكذلك AdminMiddleware سيفشل لأنه يعتمد على أن المستخدم مسجّل دخولًا مسبقًا.
+
+
+
+
+Route::prefix('admin')->group(function () {
+    Route::post('/login', [AdminController::class, 'login']);
+});
+
+
+
+//   الروات الخاص بالآدمن والمحمي
 Route::middleware(['auth:sanctum', AdminMiddleware::class])->prefix('admin')->group(function () {
- // إضافة قسم جديد
+
+    // Route::post('/admin/login', [AdminController::class, 'login']);
+
+    // إضافة قسم جديد
     Route::post('/categories/add-category', [CategoryController::class, 'store']);
 
     // إضافة مؤلف جديد
