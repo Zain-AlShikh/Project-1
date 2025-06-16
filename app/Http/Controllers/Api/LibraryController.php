@@ -84,7 +84,7 @@ class LibraryController extends Controller
         return Response::Error(null, 'This book is not in your library', 403);
     }
 
-    $book = Book::select('id', 'title', 'pdf_url')->find($bookId);
+    $book = Book::select('id',  'pdf_url')->find($bookId);
 
     if (!$book || !$book->pdf_url) {
         return Response::Error(null, 'PDF not available for this book', 404);

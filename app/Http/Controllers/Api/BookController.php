@@ -49,6 +49,37 @@ class BookController extends Controller
     }
 
 
+    /**
+     * Get top-rated books with average rating greater than 4 .
+     */
+    public function topRated(Request $request)
+    {
+        $showAll = $request->query('show_all');
+
+        $query = Book::withAvg('ratings', 'rating')
+            ->having('ratings_avg_rating', '>', 3)
+            ->orderByDesc('ratings_avg_rating');
+
+        // تحديد عدد النتائج
+        if ($showAll !== 'true') {
+            $query->limit(5);
+        }
+
+        $books = $query->get();
+
+        // تنسيق النتائج
+        $formattedBooks = $books->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'cover_url' => $book->cover_url,
+                'average_rating' => round($book->ratings_avg_rating, 1),
+            ];
+        });
+
+        return Response::Success($formattedBooks, 'Top rated books retrieved successfully');
+    }
+
 
 
 
@@ -105,7 +136,7 @@ class BookController extends Controller
     public function rate(Request $request, $bookId)
     {
         $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
+            'rating' => 'required|numeric|min:1|max:5',
         ]);
 
         $user = Auth::user();
@@ -113,11 +144,12 @@ class BookController extends Controller
 
         $rating = BookUserRating::updateOrCreate(
             ['user_id' => $user->id, 'book_id' => $book->id],
-            ['rating' => $request->rating]
+            ['rating' => round($request->rating, 1)]
         );
 
         return Response::Success($rating, 'Book rated successfully');
     }
+
 
 
 

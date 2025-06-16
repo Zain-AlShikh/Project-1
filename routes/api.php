@@ -75,9 +75,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     | Book Routes
     |--------------------------------------------------------------------------
     */
+    Route::get('books/top-rated', [BookController::class, 'topRated']);// الكتب الأعلى تقييماً 
     Route::get('/books/latest', [BookController::class, 'latest']); // تابع لعرض الكتب المضافة حديثاً , آخر 20 تمت اضافتهن
     Route::get('/books/{id}', [BookController::class, 'show']); // عرض التفاصيل الخاصة بكل كتاب
-    Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']); // تابع لأدخال الكتب  عن طريق رقمه حسب القسم الخاص به
+    // Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']); // تابع لأدخال الكتب  عن طريق رقمه حسب القسم الخاص به
     Route::post('/books/{book}/rate', [BookController::class, 'rate']); // تقييم كتاب معين
     Route::post('/books/search', [BookController::class, 'search']);
 
@@ -91,7 +92,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     */
 
     Route::prefix('categories')->group(function () {
-        Route::post('/add-category', [CategoryController::class, 'store']);                 // إضافة قسم جديد
+        // Route::post('/add-category', [CategoryController::class, 'store']);                 // إضافة قسم جديد
         Route::get('/all-categories', [CategoryController::class, 'index']);                // عرض جميع الأقسام
         Route::get('/category-books/{id}', [CategoryController::class, 'booksByCategory']); // عرض الكتب في قسم معيّن
         Route::get('/search', [CategoryController::class, 'searchCategoryByName']); // تابع للبحث عن القسم حسب الأسم

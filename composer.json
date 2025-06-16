@@ -8,6 +8,8 @@
     "require": {
         "php": "^8.2",
         "berkayk/onesignal-laravel": "^2.4",
+        "doctrine/dbal": "^4.2",
+        "guzzlehttp/guzzle": "^7.9",
         "illuminate/filesystem": "*",
         "laravel-notification-channels/onesignal": "^2.8",
         "laravel/framework": "^11.0",
