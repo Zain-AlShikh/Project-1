@@ -40,7 +40,7 @@ class BookController extends Controller
             ->orderBy('created_at', 'desc');
 
         if ($showAll === 'true') {
-            $books = $query->limit(value: 2)->get();
+            $books = $query->limit(value: 20)->get();
         } else {
             $books = $query->limit(value: 5)->get();
         }
@@ -79,6 +79,51 @@ class BookController extends Controller
 
         return Response::Success($formattedBooks, 'Top rated books retrieved successfully');
     }
+
+
+
+
+
+    /**
+     * Search for top-rated books only (avg rating > 4)
+     */
+    public function searchTopRated(Request $request)
+    {
+        $queryText = $request->input('query');
+
+        if (!$queryText) {
+            return Response::Error(null, 'Search query is required', 422);
+        }
+
+        $books = Book::withAvg('ratings', 'rating')
+            ->having('ratings_avg_rating', '>=', 4)
+            ->where(function ($q) use ($queryText) {
+                $q->where('title', 'LIKE', "%{$queryText}%")
+                    ->orWhere('publisher', 'LIKE', "%{$queryText}%")
+                    ->orWhereHas('author', function ($authorQuery) use ($queryText) {
+                        $authorQuery->where('name', 'LIKE', "%{$queryText}%");
+                    });
+            })
+            ->orderByDesc('ratings_avg_rating')
+            ->get();
+
+        if ($books->isEmpty()) {
+            return Response::Error(null, 'No top-rated books found matching your search', 404);
+        }
+
+        $results = $books->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'cover_url' => $book->cover_url,
+                'average_rating' => round($book->ratings_avg_rating, 1),
+            ];
+        });
+
+        return Response::Success($results, 'Top-rated search results retrieved successfully');
+    }
+
+
 
 
 
@@ -346,5 +391,73 @@ class BookController extends Controller
             'pdf_url'      => $book->pdf_url,
             'language'     => $book->language,
         ], 'Book fetched and saved successfully.', 201);
+    }
+
+
+
+
+    /**
+     * Summary of recommendFromPreferences
+     */
+    public function recommendFromPreferences()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return Response::Error(null, 'Unauthenticated', 401);
+        }
+        $response = Http::timeout(10)->post('http://127.0.0.1:5001/recommend-from-user', [
+            'user_id' => $user->id,
+        ]);
+
+        if (!$response->ok()) {
+            return Response::Error(null, 'AI recommender failed', 500);
+        }
+        $recIds = $response->json('book_ids', []);
+        if (empty($recIds)) {
+            $books = Book::select('id', 'title', 'cover_url')
+                ->whereIn('id', [10, 18, 24, 30, 40, 50, 70])
+                ->get();
+            return Response::Success($books, 'Default recommendations ');
+        }
+        $books = Book::select('id', 'title', 'cover_url')
+            ->whereIn('id', $recIds)
+            ->get();
+        return Response::Success($books, 'Recommendations based on your preferences');
+    }
+
+    /**
+     * Summary of getSimilarBooks
+     */
+    public function getSimilarBooks($bookId)
+    {
+        $response = Http::timeout(10)->post('http://127.0.0.1:5001/similar-books', [
+            'id' => $bookId,
+        ]);
+
+        if (!$response->ok()) {
+            return Response::Error(null, 'AI similar book request failed', 500);
+        }
+
+        $similarIds = $response->json('book_ids', []);
+        if (empty($similarIds)) {
+            return Response::Success([], 'No similar books found');
+        }
+
+        $books = Book::withAvg('ratings', 'rating')
+            ->whereIn('id', $similarIds)
+            ->having('ratings_avg_rating', '>', 0)
+            ->orderByDesc('ratings_avg_rating')
+            ->get();
+
+        $formattedBooks = $books->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'cover_url' => $book->cover_url,
+                'average_rating' => round($book->ratings_avg_rating ?? 0, 1),
+            ];
+        });
+
+        return Response::Success($formattedBooks, 'Similar books retrieved successfully');
     }
 }

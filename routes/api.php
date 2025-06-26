@@ -75,12 +75,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     | Book Routes
     |--------------------------------------------------------------------------
     */
-    Route::get('books/top-rated', [BookController::class, 'topRated']);// الكتب الأعلى تقييماً 
+    Route::get('books/top-rated', [BookController::class, 'topRated']); // الكتب الأعلى تقييماً
     Route::get('/books/latest', [BookController::class, 'latest']); // تابع لعرض الكتب المضافة حديثاً , آخر 20 تمت اضافتهن
     Route::get('/books/{id}', [BookController::class, 'show']); // عرض التفاصيل الخاصة بكل كتاب
     // Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']); // تابع لأدخال الكتب  عن طريق رقمه حسب القسم الخاص به
     Route::post('/books/{book}/rate', [BookController::class, 'rate']); // تقييم كتاب معين
     Route::post('/books/search', [BookController::class, 'search']);
+    Route::post('/books/search-top-rated', [BookController::class, 'searchTopRated']);
+
+
+    //Recommmmended
+     Route::post('/books/recommend', [BookController::class, 'recommendFromPreferences']);
+    Route::post('/books/{book}/similar', [BookController::class, 'getSimilarBooks']);
 
 
 
@@ -144,7 +150,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 //  الروات الخاص بالآدمن
 Route::middleware(['auth:sanctum', AdminMiddleware::class])->prefix('admin')->group(function () {
- // إضافة قسم جديد
+    // إضافة قسم جديد
     Route::post('/categories/add-category', [CategoryController::class, 'store']);
 
     // إضافة مؤلف جديد
@@ -152,6 +158,4 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->prefix('admin')->gr
 
     // إدخال الكتب عن طريق الرقم حسب القسم
     Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']);
-
-
 });
