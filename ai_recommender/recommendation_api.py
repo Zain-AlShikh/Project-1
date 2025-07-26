@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-load_dotenv()  # يحمّل DB_HOST, DB_USERNAME, DB_PASSWORD, DB_DATABASE
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -41,7 +41,7 @@ def get_books_df():
     df = pd.read_sql(query, conn)
     conn.close()
 
-    # فكّ الـ JSON array ثم join بعلامة فراغ
+   
     def subjects_to_text(x):
         try:
             arr = json.loads(x) if isinstance(x, str) else []

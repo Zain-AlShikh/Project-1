@@ -56,7 +56,7 @@ class AuthController extends Controller
         $code = rand(1000, 9999);
 
         try {
-            // خريطة الأرقام مع التوكينات المخصصة
+
             $tokens = [
                 '0983801332' => 'AAGvGgAALrSI75ySLNIiS3RWt-LQUVuHYqhfoC2_prZ0Rg',
                 '0934169837' => 'AAEXEgAAT5jKD4E2BDMUaKkW_WWkORYsL1ozFGP8Qq8K0g',
@@ -64,17 +64,16 @@ class AuthController extends Controller
                 '0984972040' => 'AAHnGwAA3YrshqRdP1yQ5TMkLXaJlxwzetni7iFCRNw6Kw',
             ];
 
-            // اختيار التوكن المناسب
+
             $token = $tokens[$phone] ?? env('TELEGRAM_API_TOKEN');
 
-            // إرسال رمز التحقق عبر Telegram
+
             app(\SomarKesen\TelegramGateway\Services\TelegramGatewayService::class)
                 ->sendVerificationMessage($phone, [
                     'code' => $code,
                     'ttl' => 600,
                 ], $token);
 
-            // تخزين الرمز مع الهاتف في الكاش
             Cache::put('verification_code_' . $code, $phone, now()->addMinutes(10));
 
             return response()->json([

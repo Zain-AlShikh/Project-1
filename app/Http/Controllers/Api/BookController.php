@@ -443,11 +443,28 @@ class BookController extends Controller
             return Response::Success([], 'No similar books found');
         }
 
-        $books = Book::withAvg('ratings', 'rating')
+        $ratedBooks = Book::withAvg('ratings', 'rating')
             ->whereIn('id', $similarIds)
             ->having('ratings_avg_rating', '>', 0)
             ->orderByDesc('ratings_avg_rating')
             ->get();
+
+
+        $books = $ratedBooks;
+        if ($books->count() < 5) {
+            $existingIds = $books->pluck('id')->toArray();
+            $remainingIds = array_diff($similarIds, $existingIds);
+
+            $fallbackBooks = Book::whereIn('id', $remainingIds)
+                ->get()
+                ->map(function ($book) {
+                    $book->ratings_avg_rating = 0;
+                    return $book;
+                });
+
+            $books = $books->concat($fallbackBooks)->take(5);
+        }
+
 
         $formattedBooks = $books->map(function ($book) {
             return [

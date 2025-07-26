@@ -11,18 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('users', function (Blueprint $table) {
-    $table->id();
-    $table->string('first_name');
-    $table->string('last_name');
-    $table->string('phone')->unique();
-    $table->string('email')->unique();
-    $table->string('password');
-    $table->string('location')->nullable();
-    $table->string('profile_image')->nullable();
-    $table->boolean('is_verified')->default(false);
-    $table->enum('role', ['user', 'admin'])->default('user');
-    $table->timestamps();
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('first_name');
+            $table->string('last_name');
+            $table->string('phone')->unique();
+            $table->string('email')->unique();
+            $table->string('password');
+            $table->string('location')->nullable();
+            $table->string('profile_image')->nullable();
+            $table->boolean('is_verified')->default(false);
+            $table->enum('role', ['user', 'admin'])->default('user');
+            $table->timestamps();
         });
 
 
