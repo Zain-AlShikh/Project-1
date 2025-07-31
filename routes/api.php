@@ -12,8 +12,11 @@ use App\Http\Controllers\Api\AuthorController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\FavoriteController;
 use App\Http\Controllers\Api\LibraryController;
+// .....................................................................
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Controllers\ApiAdmin\AdminController;
+use App\Http\Controllers\ApiAdmin\AdminUserController;
+use App\Http\Controllers\ApiAdmin\StatisticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -85,7 +88,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/books/{book}/rate', [BookController::class, 'rate']); // تقييم كتاب معين
     Route::post('/books/search', [BookController::class, 'search']);
 
-
+ 
 
 
     /*
@@ -109,11 +112,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
+
     Route::prefix('authors')->group(function () {
         Route::get('/all-athors', [AuthorController::class, 'index']); // عرض جميع المؤلفين
         Route::get('/{id}/books', [AuthorController::class, 'booksByAuthor']); // كتب مؤلف معين
         Route::get('/search', [AuthorController::class, 'searchAuthorByName']); // تابع للبحث عن المؤلف معين عن طريق الأسم
         Route::get('/{authorId}/books/search', [AuthorController::class, 'searchBooksByAuthor']); // تابع البحث عن كتاب معين عن طريق اسم الكتاب او الناشر
+    
+        Route::delete('/authors/{id}', [AuthorController::class, 'destroy']);
     });
     /*
     |--------------------------------------------------------------------------
@@ -170,11 +176,46 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->prefix('admin')->gr
     // إضافة قسم جديد
     Route::post('/categories/add-category', [CategoryController::class, 'store']);
 
+    //  عرض الاقسام 
+    Route::get('/categories', [CategoryController::class, 'index']);
+
+
+
+// .....................................................................................................
+
     // إضافة مؤلف جديد
     Route::post('/authors', [AuthorController::class, 'store']);
+// ......................................................................................................
+
 
     // إدخال الكتب عن طريق الرقم حسب القسم
     Route::get('/books/fetch/{identifier}/{categoryId}', [BookController::class, 'fetchAndStoreByIdentifier']);
 
+     // عرض كل الكتب بشكل عشوائي
+    // Route::get('/books/fetch', [BookController::class, 'show']);
+// id عرض تفاصيل الكتاب كاملة باستخدام ال 
+    Route::get('/books/{id}', [BookController::class, 'show']);
+
+
+    // Route::get('/categories/{id}/books', [BookController::class, 'getByCategory']);
+
+// routes/api.php
+Route::get('/categories/{id}/books', [BookController::class, 'get_Admin_ByCategory']);
+
+
+// عرض المستخدمين 
+Route::get('/users', [AdminUserController::class, 'index']);
+
+//  حذف المستخدمين
+Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+
+
+
+//  المدرج الاحصائي
+
+Route::get('/statistics/category-ratings', [StatisticsController::class, 'ratingsByCategory']);
 
 });
+
+
+

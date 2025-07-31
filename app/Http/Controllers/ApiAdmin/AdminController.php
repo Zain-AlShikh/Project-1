@@ -30,7 +30,7 @@ class AdminController extends Controller
         return response()->json([
             'message' => 'Login successful',
             // 'User' => $user,
-            'Token' => $token
+            'token' => $token
         ], 200);
     }
 

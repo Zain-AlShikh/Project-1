@@ -15,15 +15,18 @@ class AdminSeeder extends Seeder
     public function run(): void
 {
     $user = [
-        'first_name' => 'Ahmad',
-        'last_name' => 'Asaad',
-        'phone' => '966512345678',
-        'email' => 'admin@example.com',
-        'password' => Hash::make('12345678'),
+        'first_name' => 'sami',
+        'last_name' => 'Amad',
+        'phone' => '6876876888',
+        'email' => 'user23@example.com',
+        'password' => Hash::make('1234567654'),
         'location' => 'Dmascus',
-        'profile_image' => null,
+        // 'profile_image' => null,
+        // 'profile_image' => 'profile_images/image_user.jpg',
+        'profile_image' => 'profile_images/image_user.jpg', // نفس المسار
+
         'is_verified' => true,
-        'role' => 'admin',
+        'role' => 'user',
     ];
 
     User::create($user);
