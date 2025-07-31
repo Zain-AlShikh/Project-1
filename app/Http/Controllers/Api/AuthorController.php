@@ -125,4 +125,29 @@ class AuthorController extends Controller
             'name' => $author->name,
         ], 'Author found successfully');
     }
+
+
+
+
+
+    public function destroy($id)
+    {
+        $author = Author::find($id);
+    
+        if (!$author) {
+            return Response::Error(null, 'Author not found', 404);
+        }
+    
+        // حذف كل الكتب التابعة للمؤلف
+        $author->books()->delete();
+    
+        // ثم حذف المؤلف نفسه
+        $author->delete();
+    
+        return Response::Success(null, 'Author and all their books have been deleted successfully.');
+    }
+    
+
+
+
 }

@@ -131,6 +131,41 @@ class BookController extends Controller
     /**
      * Show detailed info about a specific book.
      */
+    //  مع عرص  id عرض كتاب حسب 
+    // id , title , cover_url فقط
+
+    public function getByCategory($categoryId)
+    {
+        $books = Book::where('category_id', $categoryId)
+            ->select('id', 'title', 'cover_url')
+            ->get();
+
+        return Response::Success($books, 'Books fetched for category successfully');
+    }
+
+
+
+    public function get_Admin_ByCategory($categoryId)
+    {
+        $category = Category::findOrFail($categoryId);
+
+        $books = Book::where('category_id', $categoryId)
+            ->select('id', 'title', 'cover_url')
+            ->get();
+
+        return Response::Success([
+            'category_name' => $category->name,
+            'books' => $books
+        ], 'Books fetched for category successfully');
+    }
+
+
+
+
+
+    //  مع عرص  id عرض كتاب حسب 
+    // كل معلومات الكتاب من المكتبة 
+
     public function show($id)
     {
 
@@ -185,8 +220,11 @@ class BookController extends Controller
         ]);
 
         $user = Auth::user();
-        $book = Book::findOrFail($bookId);
+        $book = Book::find($bookId);
 
+        if (!$book) {
+            return Response::Success($book, 'This book not found in database !');
+        }
         $rating = BookUserRating::updateOrCreate(
             ['user_id' => $user->id, 'book_id' => $book->id],
             ['rating' => round($request->rating, 1)]
