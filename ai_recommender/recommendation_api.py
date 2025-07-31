@@ -41,7 +41,7 @@ def get_books_df():
     df = pd.read_sql(query, conn)
     conn.close()
 
-   
+
     def subjects_to_text(x):
         try:
             arr = json.loads(x) if isinstance(x, str) else []
